@@ -51,9 +51,12 @@ public static class MarketEndpoints
         group.MapPost("/listings/{id:guid}/cancel", CancelListing);
     }
 
-    /// <summary>Danh sách lô còn hạn. Lọc theo resourceId hoặc sellerId; sort = pricePerUnit (mặc định) hoặc newest.</summary>
+    /// <summary>
+    /// Danh sách lô còn hạn. Lọc theo resourceId, sellerId hoặc kind (resource = tài nguyên, card = thẻ thú);
+    /// sort = pricePerUnit (mặc định) hoặc newest.
+    /// </summary>
     private static async Task<IResult> BrowseListings(
-        string? resourceId, Guid? sellerId, string? sort, int? page, int? pageSize,
+        string? resourceId, Guid? sellerId, string? kind, string? sort, int? page, int? pageSize,
         NpgsqlDataSource db, CancellationToken ct)
     {
         int size = Math.Clamp(pageSize ?? 20, 1, 50);
@@ -67,6 +70,10 @@ public static class MarketEndpoints
             where.Add("l.resource_id = @resource");
             parameters.Add(new NpgsqlParameter("resource", resourceId.Trim()));
         }
+        if (kind == "card")
+            where.Add("l.resource_id like 'card.%'");
+        else if (kind == "resource")
+            where.Add("l.resource_id not like 'card.%'");
         if (sellerId is Guid seller)
         {
             where.Add("l.seller_id = @seller");
@@ -142,9 +149,11 @@ public static class MarketEndpoints
             if (!settings.BaseValues.TryGetValue(resourceId, out int baseValue))
                 return ApiProblem.Create(400, ErrorCodes.UnknownResource, "This resource cannot be sold on the market.");
 
+            bool isCard = MarketRules.IsCard(resourceId);
+            int maxAmount = isCard ? settings.MaxCardsPerListing : MarketRules.MaxAmount;
             int amount = body?.Amount ?? 0;
-            if (amount < 1 || amount > MarketRules.MaxAmount)
-                return ApiProblem.Create(400, ErrorCodes.InvalidAmount, $"Amount must be between 1 and {MarketRules.MaxAmount}.");
+            if (amount < 1 || amount > maxAmount)
+                return ApiProblem.Create(400, ErrorCodes.InvalidAmount, $"Amount must be between 1 and {maxAmount}.");
 
             int price = body?.PriceCoins ?? 0;
             var (minPrice, maxPrice) = MarketRules.PriceRange(amount, baseValue, settings);
@@ -155,15 +164,31 @@ public static class MarketEndpoints
                     new { minPriceCoins = minPrice, maxPriceCoins = maxPrice });
             }
 
+            // Khóa dòng người bán: hai lần đăng cùng lúc đếm lần lượt, không cùng vượt giới hạn
+            await using (var lockSeller = new NpgsqlCommand("select 1 from players where id = @p for update", conn, tx))
+            {
+                lockSeller.Parameters.AddWithValue("p", playerId);
+                await lockSeller.ExecuteNonQueryAsync(ct);
+            }
+
             await using (var count = new NpgsqlCommand(
-                "select count(*) from listings where seller_id = @p and status = 'Active' and expires_at > now()", conn, tx))
+                "select count(*), count(*) filter (where resource_id like 'card.%') " +
+                "from listings where seller_id = @p and status = 'Active' and expires_at > now()", conn, tx))
             {
                 count.Parameters.AddWithValue("p", playerId);
-                long active = (long)(await count.ExecuteScalarAsync(ct))!;
+                await using var reader = await count.ExecuteReaderAsync(ct);
+                await reader.ReadAsync(ct);
+                long active = reader.GetInt64(0);
+                long activeCards = reader.GetInt64(1);
                 if (active >= settings.MaxActiveListings)
                 {
                     return ApiProblem.Create(409, ErrorCodes.ListingLimitReached,
                         $"You can sell at most {settings.MaxActiveListings} lots at a time.");
+                }
+                if (isCard && activeCards >= settings.MaxActiveCardListings)
+                {
+                    return ApiProblem.Create(409, ErrorCodes.ListingLimitReached,
+                        $"You can sell at most {settings.MaxActiveCardListings} card lots at a time.");
                 }
             }
 

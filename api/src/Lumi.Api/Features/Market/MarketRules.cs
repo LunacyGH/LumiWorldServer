@@ -11,6 +11,8 @@ public sealed record MarketSettings(
     int FeePercent,
     int MaxActiveListings,
     int ListingHours,
+    int MaxCardsPerListing,
+    int MaxActiveCardListings,
     decimal MinPriceFactor,
     decimal MaxPriceFactor,
     IReadOnlyDictionary<string, int> BaseValues)
@@ -39,6 +41,8 @@ public sealed record MarketSettings(
             game.MarketFeePercent,
             game.MarketMaxActiveListings,
             game.MarketListingHours,
+            game.MarketMaxCardsPerListing,
+            game.MarketMaxActiveCardListings,
             (decimal)game.MarketMinPriceFactor,
             (decimal)game.MarketMaxPriceFactor,
             baseValues);
@@ -51,6 +55,11 @@ public sealed record MarketSettings(
 public static class MarketRules
 {
     public const int MaxAmount = 999;
+
+    /// <summary>Lô thẻ thú: resource_id = "card.&lt;cardID&gt;". Mọi thứ khác là tài nguyên.</summary>
+    public const string CardPrefix = "card.";
+
+    public static bool IsCard(string resourceId) => resourceId.StartsWith(CardPrefix, StringComparison.Ordinal);
 
     // Lô giá 1 Coin thì người bán nhận 0 sau phí, nên tối thiểu 2 Coins
     public const int MinPriceCoins = 2;

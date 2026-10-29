@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Lumi.Api.Features.Config;
+using Lumi.Api.Features.Rivers;
 using Lumi.Api.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
@@ -78,6 +79,9 @@ public static class WorldEndpoints
                 return ApiProblem.Create(400, ErrorCodes.SnapshotInvalid, "Every placement needs a cardID.");
             }
         }
+
+        if (RiverEndpoints.Validate(snapshot) is string riverError)
+            return ApiProblem.Create(400, ErrorCodes.SnapshotInvalid, riverError);
 
         int score = snapshot.TryGetProperty("score", out var scoreElement) && scoreElement.TryGetInt32(out int s)
             ? Math.Max(0, s)

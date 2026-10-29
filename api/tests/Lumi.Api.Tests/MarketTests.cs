@@ -261,7 +261,7 @@ public sealed class MarketTests(LumiApiFactory factory)
         Assert.Equal(3, MarketRules.Fee(50, 5));
         Assert.Equal(5, MarketRules.Fee(100, 5));
 
-        var settings = new MarketSettings(5, 5, 72, 0.5m, 3m, new Dictionary<string, int>());
+        var settings = new MarketSettings(5, 5, 72, 10, 3, 0.5m, 3m, new Dictionary<string, int>());
 
         // Wood baseValue 5: một đơn vị từ 2 đến 15 Coins (kế hoạch)
         Assert.Equal((2, 15), MarketRules.PriceRange(1, 5, settings));

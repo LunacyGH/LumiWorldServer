@@ -5,7 +5,9 @@ using Lumi.Api.Features.Config;
 using Lumi.Api.Features.Inbox;
 using Lumi.Api.Features.Market;
 using Lumi.Api.Features.Obstacles;
+using Lumi.Api.Features.Rivers;
 using Lumi.Api.Features.Saves;
+using Lumi.Api.Features.Trades;
 using Lumi.Api.Features.Worlds;
 using Lumi.Api.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -34,6 +36,7 @@ builder.Services.AddSingleton<TokenService>();
 builder.Services.AddSingleton<IPasswordHasher<PlayerAccount>, PasswordHasher<PlayerAccount>>();
 builder.Services.AddSingleton<GameConfigService>();
 builder.Services.AddHostedService<ListingExpiryService>();
+builder.Services.AddHostedService<TradeExpiryService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -109,6 +112,8 @@ app.MapAuthEndpoints();
 app.MapConfigEndpoints();
 app.MapSaveEndpoints();
 app.MapWorldEndpoints();
+app.MapRiverEndpoints();
+app.MapTradeEndpoints();
 app.MapInboxEndpoints(app.Environment);
 app.MapMarketEndpoints();
 app.MapAdminEndpoints();

@@ -14,6 +14,11 @@ public sealed record GameConfig
     public int MarketListingHours { get; init; } = 72;
     public double MarketMinPriceFactor { get; init; } = 0.5;
     public double MarketMaxPriceFactor { get; init; } = 3;
+    public int MarketMaxCardsPerListing { get; init; } = 10;
+    public int MarketMaxActiveCardListings { get; init; } = 3;
+    public int TradeOfferHours { get; init; } = 72;
+    public int TradeMaxPendingOutgoing { get; init; } = 5;
+    public int TradeMaxCardsPerSide { get; init; } = 10;
     public string[] ObstacleAllowedKinds { get; init; } = ["Obstacle", "Drought"];
     public int ObstacleFeeCoins { get; init; } = 20;
     public int ObstacleDailyLimit { get; init; } = 3;
@@ -66,6 +71,11 @@ public sealed class GameConfigService(NpgsqlDataSource db)
                 MarketListingHours = Int(values, "market.listingHours", defaults.MarketListingHours),
                 MarketMinPriceFactor = Double(values, "market.minPriceFactor", defaults.MarketMinPriceFactor),
                 MarketMaxPriceFactor = Double(values, "market.maxPriceFactor", defaults.MarketMaxPriceFactor),
+                MarketMaxCardsPerListing = Int(values, "market.maxCardsPerListing", defaults.MarketMaxCardsPerListing),
+                MarketMaxActiveCardListings = Int(values, "market.maxActiveCardListings", defaults.MarketMaxActiveCardListings),
+                TradeOfferHours = Int(values, "trade.offerHours", defaults.TradeOfferHours),
+                TradeMaxPendingOutgoing = Int(values, "trade.maxPendingOutgoing", defaults.TradeMaxPendingOutgoing),
+                TradeMaxCardsPerSide = Int(values, "trade.maxCardsPerSide", defaults.TradeMaxCardsPerSide),
                 ObstacleAllowedKinds = values.TryGetValue("obstacle.allowedKinds", out var kinds)
                     ? kinds.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     : defaults.ObstacleAllowedKinds,

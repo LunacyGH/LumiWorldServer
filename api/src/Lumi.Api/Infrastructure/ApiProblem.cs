@@ -41,6 +41,12 @@ public static class ErrorCodes
     public const string InvalidAmount = "INVALID_AMOUNT";
     public const string PriceOutOfRange = "PRICE_OUT_OF_RANGE";
 
+    public const string TradeNotFound = "TRADE_NOT_FOUND";
+    public const string TradeUnavailable = "TRADE_UNAVAILABLE";
+    public const string TradeLimitReached = "TRADE_LIMIT_REACHED";
+    public const string TradeOwnWorld = "TRADE_OWN_WORLD";
+    public const string NotYourTrade = "NOT_YOUR_TRADE";
+
     public const string Forbidden = "FORBIDDEN";
     public const string ConfigKeyUnknown = "CONFIG_KEY_UNKNOWN";
     public const string ConfigValueInvalid = "CONFIG_VALUE_INVALID";

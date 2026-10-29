@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using Lumi.Api.Features.Rivers;
 using Lumi.Api.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
@@ -74,6 +75,9 @@ public static class SaveEndpoints
 
         if (!world.TryGetProperty("version", out var version) || version.ValueKind != JsonValueKind.Number)
             return ApiProblem.Create(400, ErrorCodes.SaveInvalid, "The world save has no version.");
+
+        if (RiverEndpoints.Validate(world) is string riverError)
+            return ApiProblem.Create(400, ErrorCodes.SaveInvalid, riverError);
 
         string worldJson = world.GetRawText();
         string economyJson = economy.GetRawText();
